@@ -1,0 +1,3 @@
+
+class EmptyInput extends RuntimeException {
+}

@@ -1,0 +1,3 @@
+
+class EndsWithOperator extends RuntimeException {
+}

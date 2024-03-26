@@ -1,0 +1,4 @@
+
+class InvalidOperator extends RuntimeException {
+
+}

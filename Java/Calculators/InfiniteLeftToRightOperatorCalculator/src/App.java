@@ -2,59 +2,18 @@ import java.util.Scanner;
 // import org.apache.commons.lang.mutable.MutableInt;
 
 public class App {
-    class InvalidOperator extends Exception {
-    };
-
-    class DivisionByZero extends Exception {
-    };
-
-    class EmptyInput extends Exception {
-    };
-
-    class SequentialOperators extends Exception {
-    };
-
-    class EndsWithOperator extends Exception {
-    };
-
-    enum Operator {
-        addition('+'),
-        subtraction('-'),
-        division('/'),
-        multiplication('*'),
-        exponentiation('^'),
-        modulus('%');
-
-        public final char operator;
-
-        Operator(char operator) {
-            this.operator = operator;
-        }
-
-        public static Operator fromChar(char operator) throws ArithmeticException {
-            Operator op = switch (operator) {
-                case '+' -> addition;
-                case '-' -> subtraction;
-                case '/' -> division;
-                case '*' -> multiplication;
-                case '^' -> exponentiation;
-                case '%' -> modulus;
-                default -> {
-                    throw new ArithmeticException();
-                }
-            };
-            return op;
-        }
-    };
-
     public static void main(String[] args) throws Exception {
         Scanner stdin = new Scanner(System.in);
 
         while (true) {
             final String input = get_input(stdin);
-
-            final double result = evaluate_string(input);
-
+            double result = 0;
+            try {
+                result = evaluate_string(input);
+            } catch (DivisionByZero e) {
+                System.out.println("You cannot divide by 0!");
+                continue;
+            }
             System.out.println("The result is " + result);
         }
 
@@ -85,7 +44,7 @@ public class App {
         boolean isOperator = true;
         String result = input.trim();
         if (result.isEmpty()) {
-            throw new App().new EmptyInput();
+            throw new EmptyInput();
         }
         for (char character : result.toCharArray()) {
             switch (character) {
@@ -94,63 +53,71 @@ public class App {
                 case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> isOperator = false;
                 default -> {
                     if (isOperator)
-                        throw new App().new SequentialOperators();
+                        throw new SequentialOperators();
                     try {
                         Operator.fromChar(character);
                     } catch (ArithmeticException e) {
-                        throw new App().new InvalidOperator();
+                        throw new InvalidOperator();
                     }
                     isOperator = true;
                 }
             }
         }
         if (isOperator)
-            throw new App().new EndsWithOperator();
+            throw new EndsWithOperator();
         return result;
 
     }
 
     static double evaluate_string(String input) throws DivisionByZero {
-        int i[] = { 0 };
+        int i[] = {0};
         double result = get_double(input, i);
-
-        return 3;
+        while (i[0] < input.length()) {
+            final char operator = get_operator(input, i);
+            try {
+                result = evaluate(result, get_double(input, i), operator);
+            } catch (ArithmeticException e) {
+                throw new DivisionByZero(e);
+            }
+        }
+        return result;
     }
 
     static double get_double(String input, int[] i) {
         double number = 0;
         while (i[0] < input.length()) {
             switch (input.charAt(i[0])) {
-                ' ' -> {
+                case ' ' -> {
                 }
-                '0', '1', '2','3','4','5','6','7','8', '9' -> {
+                case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
                     number *= 10;
                     number += input.charAt(i[0]) - '0';
                 }
-                default -> {break;}
-            }
-        }
-    }
-
-    static char get_operator(Scanner stdin) {
-        while (true) {
-            System.out.print("Enter an operator: ");
-            final String input = stdin.nextLine();
-            if (input.length() == 1) {
-                try {
-                    Operator.fromChar(input.charAt(0));
-                } catch (ArithmeticException e) {
-                    System.out.println("That wasn't a valid operator");
-                    continue;
+                default -> {
+                    return number;
                 }
-                return input.charAt(0);
-            } else {
-                System.out.println("That wasn't a valid operator");
             }
+            i[0] += 1;
         }
+        return number;
     }
 
-    static double evaluate(double number_1, double number_2, char operator) throws ArithmeticException {
+    static char get_operator(String input, int[] i) {
+        while (i[0] < input.length()) {
+            switch (input.charAt(i[0])) {
+                case ' ' -> {
+                }
+                default -> {
+                    return input.charAt(i[0]++);
+                }
+            }
+            i[0] += 1;
+        }
+        return input.charAt(i[0]);
+    }
+
+    static double evaluate(double number_1, double number_2, char operator)
+            throws ArithmeticException {
         final double result = switch (Operator.fromChar(operator)) {
             case addition -> number_1 + number_2;
             case subtraction -> number_1 - number_2;
